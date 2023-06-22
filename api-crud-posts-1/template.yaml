@@ -16,40 +16,45 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
-  PostsFunction:
+  CreatePostFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: sam-crud-posts-api
-      Handler: posts.handler
+      FunctionName: sam-crud-posts-api-create
+      Handler: posts.createPost
       Runtime: nodejs14.x
       CodeUri: .
       MemorySize: 256
       Timeout: 30
-      Events:
-        CreatePostApi:
-          Type: Api
-          Properties:
-            Path: /posts
-            Method: post
-            RestApiId: !Ref PostsApi
-        ReadPostsApi:
-          Type: Api
-          Properties:
-            Path: /posts/{postId}
-            Method: get
-            RestApiId: !Ref PostsApi
-        UpdatePostApi:
-          Type: Api
-          Properties:
-            Path: /posts/{postId}
-            Method: put
-            RestApiId: !Ref PostsApi
-        DeletePostApi:
-          Type: Api
-          Properties:
-            Path: /posts/{postId}
-            Method: delete
-            RestApiId: !Ref PostsApi
+
+  ReadPostFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: sam-crud-posts-api-read
+      Handler: posts.readPost
+      Runtime: nodejs14.x
+      CodeUri: .
+      MemorySize: 256
+      Timeout: 30
+
+  UpdatePostFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: sam-crud-posts-api-update
+      Handler: posts.updatePost
+      Runtime: nodejs14.x
+      CodeUri: .
+      MemorySize: 256
+      Timeout: 30
+
+  DeletePostFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: sam-crud-posts-api-delete
+      Handler: posts.deletePost
+      Runtime: nodejs14.x
+      CodeUri: .
+      MemorySize: 256
+      Timeout: 30
 
   PostsApi:
     Type: 'AWS::Serverless::Api'
@@ -69,7 +74,7 @@ Resources:
             x-amazon-apigateway-authorizer:
               type: 'cognito_user_pools'
               providerARNs:
-                - arn:aws:cognito-idp:us-east-1:350135973898:userpool/us-east-1_YGwdNyMBT
+                - 'arn:aws:cognito-idp:us-east-1:350135973898:userpool/us-east-1_YGwdNyMBT'
         paths:
           /posts:
             post:
@@ -77,23 +82,47 @@ Resources:
                 type: 'aws'
                 httpMethod: 'POST'
                 uri:
-                  Fn::Sub: 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostsFunction.Arn}/invocations'
+                  Fn::Sub: 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreatePostFunction.Arn}/invocations'
                 passthroughBehavior: 'when_no_match'
                 responses:
                   default:
                     statusCode: '200'
               security:
-                - MyCognitoAuthorizer: []
+                - MyCognitoAuthorizer
           /posts/{postId}:
             get:
               x-amazon-apigateway-integration:
                 type: 'aws'
                 httpMethod: 'POST'
                 uri:
-                  Fn::Sub: 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostsFunction.Arn}/invocations'
+                  Fn::Sub: 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ReadPostFunction.Arn}/invocations'
                 passthroughBehavior: 'when_no_match'
                 responses:
                   default:
                     statusCode: '200'
               security:
-                - MyCognitoAuthorizer: []
+                - MyCognitoAuthorizer
+            put:
+              x-amazon-apigateway-integration:
+                type: 'aws'
+                httpMethod: 'POST'
+                uri:
+                  Fn::Sub: 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdatePostFunction.Arn}/invocations'
+                passthroughBehavior: 'when_no_match'
+                responses:
+                  default:
+                    statusCode: '200'
+              security:
+                - MyCognitoAuthorizer
+            delete:
+              x-amazon-apigateway-integration:
+                type: 'aws'
+                httpMethod: 'POST'
+                uri:
+                  Fn::Sub: 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeletePostFunction.Arn}/invocations'
+                passthroughBehavior: 'when_no_match'
+                responses:
+                  default:
+                    statusCode: '200'
+              security:
+                - MyCognitoAuthorizer
