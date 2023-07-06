@@ -1,0 +1,12 @@
+{
+	"name": "api-crud-posts-1",
+	"version": "1.0.0",
+	"description": "AWS SAM application for CRUD operations on Posts",
+	"scripts": {
+		"test": "echo \"No tests specified\" && exit 0"
+	},
+	"author": "Your Name",
+	"dependencies": {
+		"aws-sdk": "^2.100.0"
+	}
+}
