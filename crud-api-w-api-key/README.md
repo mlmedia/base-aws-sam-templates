@@ -1,3 +1,17 @@
+# Demo CRUD API with API Key access
+
+Working demo of a CRUD API using API Gateway, Lambda, DynamoDB, and protected by API key access.
+
+### Deployment 
+
+First time deployment should use `--guided` flag:
+```
+sam deploy --guided
+```
+
+NOTE: the above will default to deploying the `dev` environment, but can be used for other environments.
+
+## Notes from initial SAM setup from scaffolded app:
 This project contains source code and supporting files for a serverless application that you can deploy with the AWS Serverless Application Model (AWS SAM) command line interface (CLI). It includes the following files and folders:
 
 - `src` - Code for the application's Lambda function.
