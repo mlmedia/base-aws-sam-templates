@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: crud-api-w-api-key
+Transform: AWS::Serverless-2016-10-31
+
+## Globals (Settings) 
+## Learn more at https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Api:
+    TracingEnabled: true
+    Cors:
+      AllowMethods: "'*'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
+  Function:
+    Tracing: Active
+    Runtime: nodejs18.x
+    Architectures:
+      - x86_64
+    MemorySize: 128
+    Timeout: 100
+
+Parameters:
+  Env:
+    Type: String
+    Description: Environment being deployed
+    Default: dev
+
+# Resources declares the AWS resources that you want to include in the stack
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
+Resources:
+
+  # set up the API
+  PostApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub example-api-${Env}
+      # different stages don't deploy well with SAM yet
+      StageName: main 
+      Auth:
+        ApiKeyRequired: true # sets for all methods
+
+  # each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # Lambda function config associated with the source code: get-all-items.js
+  getAllItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/get-all-items/index.handler
+      FunctionName: !Sub get-all-items-${Env}
+      Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
+      Policies:
+        # give CRUD Permissions to the PostTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PostTable
+      Environment:
+        Variables:
+          # make table name accessible as environment variable from function code during execution
+          TARGET_TABLE: !Ref PostTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PostApi
+            Path: /
+            Method: GET
+
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # This is a Lambda function config associated with the source code: get-by-id.js
+  getByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/get-by-id/index.handler
+      FunctionName: !Sub get-by-id-${Env}
+      Description:
+        A simple example includes a HTTP get method to get one item by
+        ID from a DynamoDB table.
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the PostTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PostTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TARGET_TABLE: !Ref PostTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PostApi
+            Path: /{id}
+            Method: GET
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # This is a Lambda function config associated with the source code: put-item.js
+  putItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/put-item/index.handler
+      FunctionName: !Sub put-item-${Env}
+      Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the PostTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PostTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TARGET_TABLE: !Ref PostTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PostApi
+            Path: /
+            Method: POST
+  # Simple syntax to create a DynamoDB table with a single attribute primary key, more in
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlesssimpletable
+
+  # DynamoDB table
+  PostTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: !Sub posts-table-${Env}
+      PrimaryKey:
+        Name: id
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 10
+        WriteCapacityUnits: 10
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+Outputs:
+  WebEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://api.example.com/"
+    

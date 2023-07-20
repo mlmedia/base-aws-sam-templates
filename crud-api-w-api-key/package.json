@@ -1,0 +1,15 @@
+{
+	"name": "crud-api-w-api-key",
+	"description": "Serverless deployment for AWS API Gateway with Lambda and DynamoDB and protected with API key access",
+	"version": "0.0.1",
+	"private": true,
+	"dependencies": {
+		"aws-sdk": "^2.1032.0"
+	},
+	"devDependencies": {
+		"aws-sdk-client-mock": "^2.0.0"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	}
+}
