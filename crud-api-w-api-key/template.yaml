@@ -33,7 +33,7 @@ Resources:
   PostApi:
     Type: AWS::Serverless::Api
     Properties:
-      Name: !Sub example-api-${Env}
+      Name: !Sub demo-crud-api-${Env}
       # different stages don't deploy well with SAM yet
       StageName: main 
       Auth:
@@ -47,7 +47,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/get-all-items/index.handler
-      FunctionName: !Sub get-all-items-${Env}
+      FunctionName: !Sub demo-crud-api-get-all-items-${Env}
       Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
       Policies:
         # give CRUD Permissions to the PostTable
@@ -73,7 +73,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/get-by-id/index.handler
-      FunctionName: !Sub get-by-id-${Env}
+      FunctionName: !Sub demo-crud-api-get-by-id-${Env}
       Description:
         A simple example includes a HTTP get method to get one item by
         ID from a DynamoDB table.
@@ -100,7 +100,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: src/put-item/index.handler
-      FunctionName: !Sub put-item-${Env}
+      FunctionName: !Sub demo-crud-api-put-item-${Env}
       Description: A simple example includes a HTTP post method to add one item to a DynamoDB table.
       Policies:
         # Give Create/Read/Update/Delete Permissions to the PostTable
@@ -124,7 +124,7 @@ Resources:
   PostTable:
     Type: AWS::Serverless::SimpleTable
     Properties:
-      TableName: !Sub posts-table-${Env}
+      TableName: !Sub demo-crud-api-posts-table-${Env}
       PrimaryKey:
         Name: id
         Type: String
@@ -137,5 +137,6 @@ Resources:
 Outputs:
   WebEndpoint:
     Description: API Gateway endpoint URL
-    Value: !Sub "https://api.example.com/"
+    Value: 
+      Fn::Sub: https://${PostApi}.execute-api.${AWS::Region}.amazonaws.com
     
