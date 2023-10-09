@@ -1,0 +1,169 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: item-cms-api-sam
+Transform: AWS::Serverless-2016-10-31
+
+## Globals (Settings) 
+## Learn more at https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Api:
+    TracingEnabled: true
+  Function:
+    Tracing: Active
+    Runtime: nodejs18.x
+    Architectures:
+      - x86_64
+    MemorySize: 128
+    Timeout: 100
+
+Parameters:
+  # Environment (NOTE: keep lowercase e.g. prod, dev, staging, etc.)
+  Env:
+    Type: String
+    Description: Target environment for deployment
+    Default: dev
+  Domain:
+    Type: String
+    Description: Domain used by the API Gateway
+    Default: none
+  ZoneId:
+    Type: String
+    Description: AWS Hosted Zone ID in the format "XYZ123456ABC".
+    Default: none
+  # Cognito User Pool used for Authorization
+  # NOTE: this should be done manually in the AWS Console rather than being created by SAM
+  UserPoolArn:
+    Type: String
+    Description: AWS Hosted Zone ID in the format "XYZ123456ABC".
+    Default: none
+
+# Resources declares the AWS resources that you want to include in the stack
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
+Resources:
+  # Creates a valid certificate for the HTTP API endpoint under the custom domain 
+  GenerateCertificate: 
+    Type: AWS::CertificateManager::Certificate
+    Properties: 
+      DomainName: !Ref Domain
+      ValidationMethod: DNS
+      DomainValidationOptions:
+      - DomainName: !Ref Domain
+        HostedZoneId: !Ref ZoneId
+
+  # set up the API
+  ItemApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub item-cms-api-${Env}
+      # different stages don't deploy well with SAM yet
+      StageName: main 
+      Domain:
+        DomainName: !Ref Domain
+        CertificateArn: !Ref GenerateCertificate
+        Route53:
+          HostedZoneId: !Ref ZoneId
+      Auth:
+        DefaultAuthorizer: ItemCMSCognitoAuthorizer
+        Authorizers:
+          ItemCMSCognitoAuthorizer:
+            UserPoolArn: !Ref UserPoolArn
+
+
+  # each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # Lambda function config associated with the source code: get-all-items.js
+  getAllItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/items/get-all-items/index.handler
+      FunctionName: !Sub item-cms-get-all-items-${Env}
+      Description: Get all items from the table.
+      Policies:
+        # give CRUD Permissions to the ItemTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTable
+      Environment:
+        Variables:
+          # make table name accessible as environment variable from function code during execution
+          TARGET_TABLE: !Ref ItemTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ItemApi
+            Path: /items
+            Method: GET
+
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # This is a Lambda function config associated with the source code: get-by-id.js
+  getItemByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/items/get-item-by-id/index.handler
+      FunctionName: !Sub item-cms-get-item-by-id-${Env}
+      Description: Get item by ID
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the ItemTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TARGET_TABLE: !Ref ItemTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ItemApi
+            Path: /items/{id}
+            Method: GET
+    
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # This is a Lambda function config associated with the source code: put-item.js
+  putItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/items/put-item/index.handler
+      FunctionName: !Sub item-cms-put-item-${Env}
+      Description: Add or update a single item to the table.
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the ItemTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          TARGET_TABLE: !Ref ItemTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ItemApi
+            Path: /items
+            Method: POST
+  # Simple syntax to create a DynamoDB table with a single attribute primary key, more in
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlesssimpletable
+
+  # DynamoDB table
+  ItemTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: !Sub item-cms-items-table-${Env}
+      PrimaryKey:
+        Name: id
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 10
+        WriteCapacityUnits: 10
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+Outputs:
+  WebEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${Domain}/"
+    
