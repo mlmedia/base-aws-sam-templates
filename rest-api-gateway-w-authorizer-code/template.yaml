@@ -7,6 +7,13 @@ Transform: AWS::Serverless-2016-10-31
 Globals:
   Api:
     TracingEnabled: true
+    Cors:
+      AllowMethods: "'*'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
+      AllowCredentials: "'true'" # Include this line to allow credentials (e.g., for cookies or HTTP authentication)
+    Auth:
+      AddDefaultAuthorizerToCorsPreflight: false
   Function:
     Tracing: Active
     Runtime: nodejs18.x
