@@ -8,10 +8,10 @@ Globals:
     Api:
         TracingEnabled: true
         Cors:
-            AllowMethods: "'*'"
-            AllowHeaders: "'*'"
+            AllowMethods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+            AllowHeaders: "'Content-Type,X-Amz-Date,X-Amz-Security-Token,Authorization,X-Api-Key,X-Requested-With,Accept,Access-Control-Allow-Methods,Access-Control-Allow-Origin,Access-Control-Allow-Headers'"
             AllowOrigin: "'*'"
-            AllowCredentials: "'true'" # Include this line to allow credentials (e.g., for cookies or HTTP authentication)
+            # AllowCredentials: true # Include this line to allow credentials (e.g., for cookies or HTTP authentication)
         Auth:
             AddDefaultAuthorizerToCorsPreflight: false
     Function:
