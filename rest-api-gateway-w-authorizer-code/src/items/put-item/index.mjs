@@ -53,10 +53,11 @@ export const handler = async (event) => {
 		statusCode: 200,
 		/* for CORS */
 		headers: {
-			"Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,X-Amz-Security-Token,Authorization,X-Api-Key,X-Requested-With,Accept,Access-Control-Allow-Methods,Access-Control-Allow-Origin,Access-Control-Allow-Headers'",
+			"Access-Control-Allow-Headers": "*",
 			"Access-Control-Allow-Origin": "*",
-			"Access-Control-Allow-Methods": "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'",
-			//"Access-Control-Allow-Credentials": true,
+			"Access-Control-Allow-Methods": "*",
+			Accept: "*/*",
+			"Content-Type": "application/json",
 		},
 		body: JSON.stringify(body),
 	};

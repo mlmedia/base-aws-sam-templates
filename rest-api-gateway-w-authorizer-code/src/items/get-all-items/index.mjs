@@ -14,46 +14,47 @@ const tableName = "item-cms-items-table-dev";
  * TODO: add limit
  */
 export const handler = async (event) => {
-	if (event.httpMethod !== "GET") {
-		throw new Error(
-			`getAllItems only accept GET method, you tried: ${event.httpMethod}`
-		);
-	}
-	/* log statements written to CloudWatch */
-	console.info("received:", event);
-
-	/**
-	 * get all items from the table (only first 1MB data, you can use `LastEvaluatedKey` to get the rest of data)
-	 * https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#scan-property
-	 * https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Scan.html
-	 */
-	var params = {
-		TableName: tableName,
-	};
-
 	try {
+		if (event.httpMethod !== "GET") {
+			throw new Error(
+				`getAllItems only accept GET method, you tried: ${event.httpMethod}`
+			);
+		}
+		/* log statements written to CloudWatch */
+		console.info("received:", event);
+
+		/**
+		 * get all items from the table (only first 1MB data, you can use `LastEvaluatedKey` to get the rest of data)
+		 * https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#scan-property
+		 * https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Scan.html
+		 */
+		var params = {
+			TableName: tableName,
+		};
 		const data = await ddbDocClient.send(new ScanCommand(params));
 		var items = data.Items;
+
+		const response = {
+			statusCode: 200,
+			/* for CORS */
+			headers: {
+				"Access-Control-Allow-Headers": "*",
+				"Access-Control-Allow-Origin": "*",
+				"Access-Control-Allow-Methods": "*",
+				Accept: "*/*",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(items),
+			//body: JSON.stringify(params)
+		};
+
+		/* log statements written to CloudWatch */
+		console.info(
+			`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`
+		);
 	} catch (err) {
-		console.log("Error", err);
+		console.log(err);
+		return err;
 	}
-
-	const response = {
-		statusCode: 200,
-		/* for CORS */
-		headers: {
-			"Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,X-Amz-Security-Token,Authorization,X-Api-Key,X-Requested-With,Accept,Access-Control-Allow-Methods,Access-Control-Allow-Origin,Access-Control-Allow-Headers'",
-			"Access-Control-Allow-Origin": "*",
-			"Access-Control-Allow-Methods": "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'",
-			//"Access-Control-Allow-Credentials": true,
-		},
-		body: JSON.stringify(items),
-		//body: JSON.stringify(params)
-	};
-
-	/* log statements written to CloudWatch */
-	console.info(
-		`response from: ${event.path} statusCode: ${response.statusCode} body: ${response.body}`
-	);
 	return response;
 };
